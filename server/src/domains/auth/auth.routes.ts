@@ -2,6 +2,7 @@ import express from "express";
 import { AuthController } from "./auth.controller";
 import { validate } from "../../middleware/validate";
 import { logInSchema, signUpSchema } from "./auth.schema";
+import { AuthenticatedRequest, authGuard } from "./auth.guard";
 
 const authRouter = express.Router();
 
@@ -18,5 +19,9 @@ authRouter.post(
 	validate({ body: logInSchema }),
 	authController.logIn.bind(authController)
 );
+
+authRouter.get("/me", authGuard, (req: AuthenticatedRequest, res) => {
+	res.json({ user: req.user });
+});
 
 export default authRouter;
