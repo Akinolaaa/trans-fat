@@ -14,9 +14,33 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  createdAt DateTime @default(now())
+  id          String        @id @default(cuid())
+  email       String        @unique
+  password    String
+  name        String?
+  createdAt   DateTime      @default(now())
+  VideoUpload VideoUpload[]
+}
+
+model VideoUpload {
+  id               String       @id @default(cuid())
+  uploadId         String       @unique
+  key              String       // Object key (e.g. user/video-name.mp4)
+  bucket           String
+  fileName         String
+  contentType      String
+  size             BigInt
+  status           UploadStatus @default(PENDING)
+  user             User         @relation(fields: [userId], references: [id])
+  userId           String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+enum UploadStatus {
+  PENDING
+  UPLOADING
+  COMPLETED
+  FAILED
+  CANCELLED
 }

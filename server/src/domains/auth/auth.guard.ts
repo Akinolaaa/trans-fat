@@ -8,7 +8,12 @@ import { HttpException } from "../../exceptions/http.exception";
 const logger = new Logger("AuthGuard");
 const prisma = new PrismaClient();
 
-export interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest<
+	Params = unknown,
+	ResBody = unknown,
+	ReqBody = unknown,
+	ReqQuery = unknown
+> extends Request<Params, ResBody, ReqBody, ReqQuery> {
 	user?: {
 		id: string;
 		email: string;
