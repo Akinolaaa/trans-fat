@@ -1,5 +1,6 @@
 import express, { type Request, type Response } from "express";
 import appRouter from "./router";
+import { errorHandler } from "./middleware/global-error-handler";
 
 const app = express();
 
@@ -16,12 +17,12 @@ app.get("/", (_: Request, res: Response) => {
 });
 
 // routes
-app.use(appRouter)
+app.use(appRouter);
 
 // extra packages
 
 // errors
 // app.use(notFoundMiddleware);
-// app.use(errorHandlerMiddleware);
+app.use(errorHandler);
 
 export default app;
