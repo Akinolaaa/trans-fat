@@ -58,8 +58,8 @@ export class AuthController {
 	}
 
 	private generateToken(userId: string) {
-		return jwt.sign({ sub: userId }, process.env.JWT_SECRET || "jwtsecret", {
-			expiresIn: "30",
+		return jwt.sign({ sub: userId }, process.env.JWT_SECRET!, {
+			expiresIn: "30d",
 		});
 	}
 }
