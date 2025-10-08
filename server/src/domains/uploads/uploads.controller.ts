@@ -12,6 +12,7 @@ import {
 	CompleteUploadInput,
 	InitiateUploadInput,
 	PresignUrlQueryInput,
+	UpdateStatusInput,
 } from "./uploads.schema";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { HttpException } from "../../exceptions/http.exception";
@@ -99,6 +100,13 @@ export class UploadsController {
 
 			const url = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 
+			await prisma.videoUpload.update({
+				where: { id: videoUpload.id },
+				data: {
+					status: "UPLOADING",
+				},
+			});
+
 			res.status(200).json({ url });
 		} catch (error: unknown) {
 			this.logger.error("Unable to get signed url", error as string | object);
@@ -155,6 +163,13 @@ export class UploadsController {
 
 			await s3Client.send(commpleteUploadCommand);
 
+			await prisma.videoUpload.update({
+				where: { id: videoUpload.id },
+				data: {
+					status: "COMPLETED",
+				},
+			});
+
 			// enqueue FFmpeg job here (we'll add later)
 			// queue.add('transcode', { key })
 		} catch (error: unknown) {
@@ -169,5 +184,98 @@ export class UploadsController {
 		}
 
 		res.status(200).json({ success: true });
+	}
+
+	async updateStatus(
+		req: AuthenticatedRequest<unknown, unknown, UpdateStatusInput>,
+		res: Response
+	) {
+		const { uploadId, status } = req.body;
+
+		// look for upload record
+		const videoUpload = await prisma.videoUpload.findFirst({
+			where: {
+				uploadId,
+				userId: req.user!.id,
+			},
+		});
+
+		if (!videoUpload) {
+			throw new HttpException(
+				`No video upload with uploadId ${uploadId} found for this user`
+			);
+		}
+
+		if (
+			videoUpload.status === "COMPLETED" ||
+			videoUpload.status === "CANCELLED"
+		) {
+			throw new HttpException(`Upload already ${videoUpload.status}`);
+		}
+
+		await prisma.videoUpload.update({
+			where: { id: videoUpload.id },
+			data: {
+				status,
+			},
+		});
+
+		return res.status(200).json({ message: "Status update successful" });
+	}
+
+	async listUploads(
+		req: AuthenticatedRequest<
+			unknown,
+			unknown,
+			unknown,
+			{ page?: string; perPage?: string }
+		>,
+		res: Response
+	) {
+		if (!req.user) {
+			throw new HttpException("User missing", 500);
+		}
+
+		const page = parseInt(req.query.page || "1", 10);
+		const perPage = parseInt(req.query.perPage || "10", 10);
+
+		if (isNaN(page) || isNaN(perPage)) {
+			throw new HttpException("Invalid format for page or perPage");
+		}
+
+		const skip = (page - 1) * perPage;
+
+		// Get total count
+		const total = await prisma.videoUpload.count({
+			where: {
+				userId: req.user.id,
+			},
+		});
+
+		// Fetch paginated uploads
+		const uploads = await prisma.videoUpload.findMany({
+			where: {
+				userId: req.user.id,
+			},
+			orderBy: {
+				createdAt: "desc",
+			},
+			skip,
+			take: perPage,
+		});
+
+		const totalPages = Math.ceil(total / perPage);
+
+		res.json({
+			data: uploads,
+			meta: {
+				page,
+				perPage,
+				total,
+				totalPages,
+				hasNextPage: page < totalPages,
+				hasPrevPage: page > 1,
+			},
+		});
 	}
 }

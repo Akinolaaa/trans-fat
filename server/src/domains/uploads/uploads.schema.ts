@@ -16,7 +16,13 @@ export const completeUploadSchema = z.object({
 	parts: z.array(z.object({ eTag: z.string(), partNumber: z.number() })),
 });
 
+export const updateStatusSchema = z.object({
+	uploadId: z.string(),
+	status: z.enum(['PAUSED', 'UPLOADING', 'CANCELLED'])
+});
+
 // 👇 Infer the TypeScript type from the schema
 export type InitiateUploadInput = z.infer<typeof initiateUploadSchema>;
 export type PresignUrlQueryInput = z.infer<typeof presignUrlQuerySchema>;
 export type CompleteUploadInput = z.infer<typeof completeUploadSchema>;
+export type UpdateStatusInput = z.infer<typeof updateStatusSchema>;
