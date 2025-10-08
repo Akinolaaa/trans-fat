@@ -7,6 +7,6 @@ const appRouter = express.Router()
 
 
 appRouter.use('/api/auth', authRouter)
-appRouter.use('/api/upload', uploadRouter)
+appRouter.use('/api/uploads', uploadRouter)
 
 export default appRouter

@@ -47,7 +47,6 @@ export const authGuard = async (
 
 		let userId = "";
 		try {
-			console.log(token);
 			const decoded = jwt.verify(token, secret) as { sub: string };
 			if (!decoded || !decoded.sub) {
 				throw new HttpException("Invalid token", 403);
@@ -71,7 +70,6 @@ export const authGuard = async (
 		// Attach user to request object
 		req.user = user;
 
-		logger.info(`Authenticated request for user=${user.email}`);
 		next();
 	} catch (err: unknown) {
 		const errorMessage = err instanceof Error ? err.message : String(err);

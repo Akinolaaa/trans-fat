@@ -70,7 +70,7 @@ export class UploadsController {
 		req: AuthenticatedRequest<unknown, unknown, unknown, PresignUrlQueryInput>,
 		res: Response
 	) {
-		const { uploadId, partNumber, key } = req.query;
+		const { uploadId, partNumber } = req.query;
 
 		// look for upload record
 		const videoUpload = await prisma.videoUpload.findFirst({
@@ -86,11 +86,14 @@ export class UploadsController {
 			);
 		}
 
+		if (isNaN(parseInt(partNumber))) {
+			throw new HttpException("Invalid part number");
+		}
 		try {
 			const command = new UploadPartCommand({
 				Bucket: process.env.S3_BUCKET!,
-				Key: key,
-				UploadId: uploadId,
+				Key: videoUpload.key,
+				UploadId: videoUpload.uploadId,
 				PartNumber: parseInt(partNumber),
 			});
 
@@ -108,7 +111,6 @@ export class UploadsController {
 		res: Response
 	) {
 		const { uploadId, parts } = req.body;
-
 		// look for upload record
 		const videoUpload = await prisma.videoUpload.findFirst({
 			where: {
@@ -124,7 +126,7 @@ export class UploadsController {
 		}
 
 		const formattedParts = parts.map((p) => ({
-			Etag: p.eTag,
+			ETag: p.eTag,
 			PartNumber: p.partNumber,
 		}));
 
@@ -141,7 +143,7 @@ export class UploadsController {
 				throw new HttpException("An error occured while uploading", 400);
 			}
 
-			this.logger.info(`gotten parts for uploadId ${uploadId}`);
+			this.logger.info(`gotten parts for uploadId ${videoUpload.id}`);
 			const commpleteUploadCommand = new CompleteMultipartUploadCommand({
 				Bucket: process.env.S3_BUCKET!,
 				Key: videoUpload.key,
@@ -165,9 +167,7 @@ export class UploadsController {
 			);
 			throw new HttpException("Unable to list upload parts");
 		}
-		// enqueue FFmpeg job here (we'll add later)
-		// queue.add('transcode', { key })
 
-		res.json({ success: true });
+		res.status(200).json({ success: true });
 	}
 }

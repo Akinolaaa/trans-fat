@@ -1,16 +1,16 @@
 import express, { type Request, type Response } from "express";
 import appRouter from "./router";
 import { errorHandler } from "./middleware/global-error-handler";
+import cors from 'cors'
 
 const app = express();
 
-// // error handler
-// import notFoundMiddleware from "./middleware/not-found.middleware";
-// import errorHandlerMiddleware from "./middleware/error-handler.middleware";
 
+app.use(cors())
 app.set("trust proxy", 1);
 
 app.use(express.json());
+
 
 app.get("/", (_: Request, res: Response) => {
 	res.send("<h1>Transfat API</h1>");

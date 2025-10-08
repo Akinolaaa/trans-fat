@@ -2,7 +2,7 @@ import express from "express";
 import { AuthenticatedRequest, authGuard } from "../auth/auth.guard";
 import { UploadsController } from "./uploads.controller";
 import { validate } from "../../middleware/validate";
-import { initiateUploadSchema, presignUrlQuerySchema } from "./uploads.schema";
+import { completeUploadSchema, initiateUploadSchema, presignUrlQuerySchema } from "./uploads.schema";
 
 const uploadRouter = express.Router();
 const uploadController = new UploadsController();
@@ -24,7 +24,11 @@ uploadRouter.get(
 	validate({ query: presignUrlQuerySchema }),
 	uploadController.getPresignedUrl.bind(uploadController)
 );
-
-
+uploadRouter.post(
+	"/complete",
+	authGuard,
+	validate({ body: completeUploadSchema }),
+	uploadController.complete.bind(uploadController)
+);
 
 export default uploadRouter;

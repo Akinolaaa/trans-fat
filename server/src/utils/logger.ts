@@ -40,9 +40,17 @@ export class Logger {
 	}
 
 	error(message: string, trace?: string | object) {
-		const errorMessage = trace
-			? `${message} - ${JSON.stringify(trace)}`
-			: message;
-		this.logger.error(errorMessage);
+		let traceString = "";
+
+		if (trace) {
+			try {
+				traceString = typeof trace === "string" ? trace : JSON.stringify(trace);
+			} catch {
+				traceString =
+					trace instanceof Error ? trace.stack || trace.message : String(trace);
+			}
+		}
+
+		this.logger.error(`${message}${traceString ? ` - ${traceString}` : ""}`);
 	}
 }

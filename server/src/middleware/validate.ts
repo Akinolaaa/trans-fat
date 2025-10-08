@@ -12,18 +12,15 @@ export const validate = (schema: SchemaShape) => {
 	return (req: Request, _res: Response, next: NextFunction) => {
 		try {
 			if (schema.body) {
-				const parsed = schema.body.parse(req.body);
-				req.body = parsed;
+				schema.body.parse(req.body);
 			}
 
 			if (schema.query) {
-				const parsed = schema.query.parse(req.query);
-				req.query = parsed as typeof req.query;
+				schema.query.parse(req.query);
 			}
 
 			if (schema.params) {
-				const parsed = schema.params.parse(req.params);
-				req.params = parsed as typeof req.params;
+				schema.params.parse(req.params);
 			}
 
 			next();

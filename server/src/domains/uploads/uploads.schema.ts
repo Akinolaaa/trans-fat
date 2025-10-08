@@ -2,14 +2,13 @@ import { z } from "zod";
 
 export const initiateUploadSchema = z.object({
 	fileName: z.string(),
-  fileSize: z.string(),
+	fileSize: z.number(),
 	contentType: z.string(),
 });
 
 export const presignUrlQuerySchema = z.object({
 	uploadId: z.string(),
 	partNumber: z.string(),
-	key: z.string(),
 });
 
 export const completeUploadSchema = z.object({
