@@ -1,5 +1,7 @@
 import { Card } from "@/components/ui/card";
-import VideoUploader from "@/components/VideoUploader";
+import UploadList from "@/components/UploadList";
+// import VideoUploader from "@/components/VideoUploader";
+import VideoUploaderV2 from "@/components/VideoUploaderV2";
 import { useNavigate } from "react-router-dom";
 
 export default function VideoUploadPage() {
@@ -12,12 +14,12 @@ export default function VideoUploadPage() {
 	}
 	const user = JSON.parse(userStorage) as { name: string };
 	return (
-		<div className='h-screen'>
+		<div className='min-h-screen'>
 			<p className='text-center pt-1'>Welcome {user?.name ?? ""},</p>
 			<div className='px-6 h-min-h flex items-center justify-center w-screen'>
 				<Card className='w-5/6 h-5/6 px-3'>
-					<h1 className='text-2xl font-bold mb-4'>Video Upload Page</h1>
-					<VideoUploader />
+					<VideoUploaderV2 />
+					<UploadList />
 				</Card>
 			</div>
 		</div>

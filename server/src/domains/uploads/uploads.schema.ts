@@ -18,7 +18,7 @@ export const completeUploadSchema = z.object({
 
 export const updateStatusSchema = z.object({
 	uploadId: z.string(),
-	status: z.enum(['PAUSED', 'UPLOADING', 'CANCELLED'])
+	status: z.enum(['PAUSED', 'UPLOADING', 'CANCELLED', 'FAILED'])
 });
 
 // 👇 Infer the TypeScript type from the schema

@@ -61,10 +61,7 @@ export class UploadsController {
 			},
 		});
 
-		res.json({
-			uploadId: videoUpload.uploadId,
-			key: response.Key,
-		});
+		res.status(200).json({ ...videoUpload, size: videoUpload.size.toString() });
 	}
 
 	async getPresignedUrl(
@@ -264,10 +261,15 @@ export class UploadsController {
 			take: perPage,
 		});
 
+		const serialized = uploads.map((u) => ({
+			...u,
+			size: u.size?.toString(), // convert BigInt to string
+		}));
+
 		const totalPages = Math.ceil(total / perPage);
 
 		res.json({
-			data: uploads,
+			data: serialized,
 			meta: {
 				page,
 				perPage,
