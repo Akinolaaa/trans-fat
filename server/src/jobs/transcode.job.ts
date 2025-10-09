@@ -1,13 +1,11 @@
 import { Job } from "bullmq";
 import { prisma } from "../db";
-import {
-	GetObjectCommand,
-	PutObjectCommand,
-} from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import * as fs from "fs-extra";
 import * as path from "path";
 import ffmpeg from "fluent-ffmpeg";
 import { s3Client } from "../lib/s3";
+import { Readable } from "stream";
 
 export async function transcodeJob(job: Job<{ videoUploadId: string }>) {
 	const { videoUploadId } = job.data;
@@ -53,7 +51,6 @@ export async function transcodeJob(job: Job<{ videoUploadId: string }>) {
 async function fakeTranscode(_key: string) {
 	return new Promise((resolve) => setTimeout(resolve, 3000));
 }
-
 
 const TEMP_DIR = path.join(process.cwd(), "temp_processing");
 const OUTPUT_DIR_NAME = "hls";
@@ -103,8 +100,8 @@ export async function processTranscodeJob(
 		});
 		const s3Object = await s3Client.send(downloadCommand);
 		const writeStream = fs.createWriteStream(localSourcePath);
-		await new Promise((resolve, reject) => {
-			s3Object.Body 
+		await new Promise<void>((resolve, reject) => {
+			(s3Object.Body as Readable)
 				.pipe(writeStream)
 				.on("error", reject)
 				.on("close", resolve);
