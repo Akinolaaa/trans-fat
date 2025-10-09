@@ -23,18 +23,24 @@ model User {
 }
 
 model VideoUpload {
-  id          String       @id @default(cuid())
-  uploadId    String       @unique
-  key         String // Object key (e.g. user/video-name.mp4)
-  bucket      String
-  fileName    String
-  contentType String
-  size        BigInt
-  status      UploadStatus @default(PENDING)
-  user        User         @relation(fields: [userId], references: [id])
-  userId      String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id              String           @id @default(cuid())
+  uploadId        String           @unique
+  key             String // Object key (e.g. user/video-name.mp4)
+  bucket          String
+  fileName        String
+  contentType     String
+  size            BigInt
+  status          UploadStatus     @default(PENDING)
+  user            User             @relation(fields: [userId], references: [id])
+  userId          String
+  isTranscoded    Boolean          @default(false)
+  transcodeStatus TranscodeStatus? @default(NOT_STARTED)
+  transcodedAt    DateTime?
+  hlsMasterKey    String?
+  hlsManifestKey  String?
+  thumbNailKey    String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 enum UploadStatus {
@@ -44,4 +50,12 @@ enum UploadStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+enum TranscodeStatus {
+  NOT_STARTED
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
 }

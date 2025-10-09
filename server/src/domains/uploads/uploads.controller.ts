@@ -3,6 +3,7 @@ import { Logger } from "../../utils/logger";
 import {
 	CompleteMultipartUploadCommand,
 	CreateMultipartUploadCommand,
+	GetObjectCommand,
 	ListPartsCommand,
 	UploadPartCommand,
 } from "@aws-sdk/client-s3";
@@ -17,6 +18,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { HttpException } from "../../exceptions/http.exception";
 import { prisma } from "../../db";
+import { transcodeQueue } from "../../jobs";
 
 export class UploadsController {
 	private logger = new Logger(UploadsController.name);
@@ -167,8 +169,18 @@ export class UploadsController {
 				},
 			});
 
-			// enqueue FFmpeg job here (we'll add later)
-			// queue.add('transcode', { key })
+			// send to queue fro processing
+			await transcodeQueue.add(
+				"transcode-video",
+				{
+					videoUploadId: videoUpload.id,
+				},
+				{
+					attempts: 3, // retry up to 3 times
+					removeOnComplete: true,
+					removeOnFail: false,
+				}
+			);
 		} catch (error: unknown) {
 			if (error instanceof HttpException) {
 				throw error;
@@ -279,5 +291,41 @@ export class UploadsController {
 				hasPrevPage: page > 1,
 			},
 		});
+	}
+
+	async getUploadManifest(
+		req: AuthenticatedRequest<{ videoUploadId: string }>,
+		res: Response
+	) {
+		const { videoUploadId } = req.params;
+
+		const videoUpload = await prisma.videoUpload.findFirst({
+			where: {
+				id: videoUploadId,
+				userId: req.user!.id,
+			},
+		});
+
+		if (!videoUpload) {
+			throw new HttpException(
+				`No video upload with uploadId ${videoUploadId} found for this user`
+			);
+		}
+
+		if (!videoUpload.hlsMasterKey) {
+			throw new HttpException("Video not found or still processing.", 404);
+		}
+
+		//  generate a pre-signed URL for the master manifest
+		const command = new GetObjectCommand({
+			Bucket: videoUpload.bucket,
+			Key: videoUpload.hlsMasterKey,
+		});
+
+		const url = await getSignedUrl(s3Client, command, {
+			expiresIn: 24 * 60 * 60,
+		});
+
+		res.json({ url });
 	}
 }

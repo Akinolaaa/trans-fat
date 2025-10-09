@@ -28,7 +28,6 @@ const UploadTaskItem = ({ taskId, file, onTaskRemoval }: Props) => {
 	const partsDataRef = useRef<{ partNumber: number; eTag: string }[]>([]);
 	const resumeResolver = useRef<((t?: unknown) => void) | null>(null);
 	const statusRef = useRef(uploadState); // The mutable ref for async loop status
-	// const progressRef = useRef(progress)
 
 	// Sync the mutable ref with the current state after every render
 	useEffect(() => {
@@ -94,7 +93,6 @@ const UploadTaskItem = ({ taskId, file, onTaskRemoval }: Props) => {
 		if (!file) return;
 
 		setUploadState("UPLOADING");
-		setProgress(0);
 		partsDataRef.current = [];
 
 		try {
@@ -137,10 +135,15 @@ const UploadTaskItem = ({ taskId, file, onTaskRemoval }: Props) => {
 
 				partsDataRef.current.push({ partNumber, eTag });
 
-				// Simulate network latency before chunk upload
-				await sleep(2);
+				console.log(
+					"progress should be",
+					Math.round((partNumber / totalParts) * 100)
+				);
 				setProgress(Math.round((partNumber / totalParts) * 100));
 				console.log("Progress is this", progress);
+
+				// Simulate network latency
+				await sleep(2);
 			}
 
 			await completeUpload({ uploadId, parts: partsDataRef.current });
@@ -202,11 +205,8 @@ const UploadTaskItem = ({ taskId, file, onTaskRemoval }: Props) => {
 
 			{/* Progress Bar */}
 			<div className='mt-3 relative h-2 bg-gray-200 rounded-full overflow-hidden'>
-				<Progress
-					value={progress}
-					className='h-full transition-all duration-500 ease-out'
-				/>
-				{isUploadingOrPaused && progress > 0 && (
+				<Progress value={progress} className='h-full transition-all ease-out' />
+				{isUploadingOrPaused && progress >= 0 && (
 					<span className='absolute right-0 text-xs font-medium pr-1 text-gray-700 -mt-0.5'>
 						{progress}%
 					</span>

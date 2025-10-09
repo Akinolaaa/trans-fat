@@ -1,0 +1,158 @@
+import { useEffect, useRef, useState } from "react";
+import Hls from "hls.js";
+import type { Upload } from "@/api/upload";
+
+export interface VideoStreamData {
+	status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+	hlsUrl: string | null;
+	thumbnailUrl: string | null;
+}
+
+const VideoPlayer = ({
+	videoId,
+	authToken,
+}: {
+	videoId: string;
+	authToken: string;
+}) => {
+	const videoRef = useRef<HTMLVideoElement>(null);
+	const [videoData, setVideoData] = useState<Upload | null>(null);
+	const [loadingError, setLoadingError] = useState<string | null>(null);
+
+	// --- Effect 1: Fetch Video Data and Status ---
+	useEffect(() => {
+		const fetchVideoData = async (id: string, token: string) => {
+			try {
+				setLoadingError(null);
+
+				const config = {
+					headers: {
+						Authorization: `Bearer ${token}`,
+					},
+				};
+
+				// Use Axios to fetch the status and HLS/Thumbnail URLs
+				const response = await api.get<Upload>(`/videos/${id}/data`, config);
+				setVideoData(response.data);
+			} catch (error) {
+				if (axios.isAxiosError(error)) {
+					console.error("API Error:", error.response?.data || error.message);
+					setLoadingError(
+						`Failed to load video data: ${
+							error.response?.statusText || error.message
+						}`
+					);
+				} else {
+					console.error("Unknown error:", error);
+					setLoadingError(
+						"An unexpected error occurred while fetching video data."
+					);
+				}
+			}
+		};
+
+		fetchVideoData(videoId, authToken);
+	}, [videoId, authToken]);
+
+	// --- Effect 2: Initialize HLS Player ---
+	useEffect(() => {
+		const videoElement = videoRef.current;
+		if (
+			!videoElement ||
+			!videoData ||
+			videoData.status !== "COMPLETED"
+			// !videoData.hlsUrl TODO
+		) {
+			return;
+		}
+
+		// Check if the HLS player has been initialized already
+		if (videoElement.dataset.hlsInitialized === "true") {
+			return;
+		}
+
+		if (Hls.isSupported()) {
+			const hls = new Hls({
+				// Other HLS config, e.g., enabling performance logging
+			});
+
+			// CRITICAL: Configure hls.js to use Axios's setup function for authenticated requests
+			hls.config.xhrSetup = function (xhr) {
+				// This function is called for EVERY request (manifest, sub-manifest, segment)
+				xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
+			};
+
+			hls.loadSource(videoData.hlsUrl);
+			hls.attachMedia(videoElement);
+
+			hls.on(Hls.Events.MANIFEST_PARSED, function () {
+				videoElement
+					.play()
+					.catch((e) => console.warn("Autoplay was prevented:", e));
+			});
+
+			// Mark element as initialized
+			videoElement.dataset.hlsInitialized = "true";
+
+			return () => {
+				hls.destroy();
+				videoElement.removeAttribute("data-hls-initialized");
+			};
+		} else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
+			// Fallback for native HLS support (Safari/iOS)
+			// Note: Native players do not support custom headers easily, security relies on URL access
+			videoElement.src = videoData.hlsUrl;
+			videoElement.play();
+		}
+	}, [videoData, authToken]); // Re-run when videoData (specifically hlsUrl) or authToken changes
+
+	// --- Rendering Logic ---
+	if (loadingError) {
+		return <div className='video-error'>Error: {loadingError}</div>;
+	}
+
+	if (!videoData) {
+		return <div className='video-loading'>Loading video status...</div>;
+	}
+
+	if (videoData.status !== "COMPLETED") {
+		return (
+			<div className='video-processing'>
+				<h2>Video is Processing</h2>
+				<p>Status: **{videoData.status}**</p>
+				{videoData.status === "PENDING" && (
+					<p>Upload complete. Waiting for transcoding job to start.</p>
+				)}
+				{videoData.status === "PROCESSING" && (
+					<p>Transcoding to HLS is currently in progress.</p>
+				)}
+				{videoData.status === "FAILED" && (
+					<p>An error occurred during processing. Please try again later.</p>
+				)}
+			</div>
+		);
+	}
+
+	// Render the player once completed
+	return (
+		<div className='video-container'>
+			{/* Thumbnail is redundant when video is playing, but useful pre-play */}
+			{videoData.thumbnailUrl && (
+				<img
+					src={videoData.thumbnailUrl}
+					alt='Video Thumbnail'
+					style={{ maxWidth: "100%" }}
+				/>
+			)}
+
+			<video
+				ref={videoRef}
+				controls
+				style={{ width: "100%", display: "block" }}
+				poster={videoData.thumbnailUrl || ""} // Use the thumbnail as the poster image
+			/>
+		</div>
+	);
+};
+
+export default VideoPlayer;
