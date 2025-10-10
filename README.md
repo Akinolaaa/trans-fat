@@ -30,6 +30,8 @@ After all parts are uploaded, the backend calls completeMultipartUpload, Marks u
 
 There worker server picks up the job from the queue to begin transcoding. Relevant data/metadata are pulled from the database as well `transcodeStatus` to track process and ensure retry-safe jobs.
 
+A cron job to remove/delet abandoned upload chunks in the S3 will be added to the worker manage storage.
+
 The transcoding process goes as thus;
 
 1. The video is streamed from the miniobucket and written in a temporary folder on the local worker server in a temp directory
@@ -39,6 +41,42 @@ The transcoding process goes as thus;
 ### Streaming
 
 Presigned URLs for the playlist and segment files in the bucket for the hls player (to ensure secure temporary access).
+
+## Frontend Strategy (React + Tailwind)
+
+You built two main components:
+
+### VideoUploader
+
+- Handles video selection and validation
+- Rejects files larger than 5GB.
+- Implements chunked upload with progress tracking.
+- Supports pause, resume and cancel:
+- Persists state with backend via updateStatus API.
+- Resumes from the last uploaded part if possible.
+
+Shows file name, progress, and status.
+
+### UploadList
+
+- Displays uploads fetched from the backend (paginated and sorted by creation date descending).
+- Provides buttons to pause, resume, or cancel existing uploads.
+- Reactively updates when a new upload is initiated or status changes
+- Play button that shows a video player poppup and streams the video for already transcoded videos
+
+## Scaling to One Million Concurrent Downloads
+
+### Autoscale Services as Needed
+
+- API autoscaling behind a load balancer to handle requests.
+- Worker autoscaling based on queue length & CPU/memory to handle transcoding and manifest/thumbnail generation
+- Storage autoscaling (use cloud S3 or a highly-available MinIO cluster).
+
+## Current Bugs/Backlog
+
+- Manifest and thumbnail generation
+- Video player implementation
+- Cron job to delete abandoned uploads
 
 ## To Run
 
