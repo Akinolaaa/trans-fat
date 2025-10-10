@@ -75,6 +75,7 @@ Shows file name, progress, and status.
 ## Current Bugs/Backlog
 
 - Manifest and thumbnail generation
+- Resume upload on refresh
 - Video player implementation
 - Cron job to delete abandoned uploads
 
@@ -121,4 +122,4 @@ VITE_API_BASE_URL=http://localhost:4000
 
 Run this command in the root directory of the project `docker compose up -d`
 
-In your browser, go to **http://localhost:3000**
+In your browser, go to `http://localhost:3000`
