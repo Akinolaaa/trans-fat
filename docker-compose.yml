@@ -35,7 +35,7 @@ services:
       dockerfile: Dockerfile
     container_name: transfat-worker
     env_file:
-      - ./server/.env.docker
+      - ./.env
     depends_on:
       - redis
       - minio
