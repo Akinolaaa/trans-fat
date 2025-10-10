@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { listUploads, type ListUploadsResponse } from "@/api/upload";
+import { Popover, PopoverContent } from "@radix-ui/react-popover";
+import { PopoverTrigger } from "./ui/popover";
 
 export default function UploadList() {
 	const [uploads, setUploads] = useState<ListUploadsResponse["data"]>([]);
@@ -49,6 +51,10 @@ export default function UploadList() {
 						<p className='text-sm'>
 							{(Number(upload.size) / (1024 * 1024)).toFixed(2)} MB
 						</p>
+						<Popover>
+							<PopoverTrigger>Play</PopoverTrigger>
+							<PopoverContent> Video player here</PopoverContent>
+						</Popover>
 					</Card>
 				))}
 			</div>

@@ -35,7 +35,7 @@ export class UploadsController {
 		}
 
 		// TODO- parse the filename to a safer one
-		const key = `videos/${req.user.id}/${fileName}_${Date.now()}`; // videos/userId/filename_date
+		const key = `uploads/${req.user.id}/${fileName}_${Date.now()}`; // videos/userId/filename_date
 
 		const command = new CreateMultipartUploadCommand({
 			Bucket: process.env.S3_BUCKET!,
@@ -181,6 +181,14 @@ export class UploadsController {
 					removeOnFail: false,
 				}
 			);
+			this.logger.info(`video sent to queue`);
+
+			await prisma.videoUpload.update({
+				where: { id: videoUpload.id },
+				data: {
+					transcodeStatus: "QUEUED",
+				},
+			});
 		} catch (error: unknown) {
 			if (error instanceof HttpException) {
 				throw error;

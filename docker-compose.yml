@@ -1,18 +1,46 @@
 services:
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:4000
+    container_name: transfat-client
+    ports:
+      # Map host port 3000 to container port 3000 (where 'serve' runs)
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: always
+
   api:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: trans-fat-api
+    container_name: transfat-api
     ports:
       - "4000:4000"
     env_file:
-      - ./server/.env.docker
+      - ./.env
     depends_on:
       - minio
       - postgres
       - redis
+      - worker
     command: sh -c "yarn prisma migrate deploy && yarn start"
+
+  worker:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: transfat-worker
+    env_file:
+      - ./server/.env.docker
+    depends_on:
+      - redis
+      - minio
+      - postgres
+    command: sh -c "yarn prisma migrate deploy && yarn start-worker"
 
   minio:
     image: minio/minio
@@ -20,14 +48,19 @@ services:
     ports:
       - "9000:9000"
       - "9090:9090"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-      MINIO_BUCKETS: transfat-uploads
+    env_file:
+      - ./.env
     volumes:
       - ./minio-data:/data
-    command: server /data --console-address ":9090"
-
+    entrypoint: /bin/sh -c
+    command: >
+      "
+        minio server /data --console-address ':9090' &
+        sleep 5 &&
+        /usr/bin/mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} &&
+        /usr/bin/mc mb local/$${MINIO_BUCKET_NAME} --ignore-existing &&
+        wait
+      "
   postgres:
     image: postgres:15-alpine
     container_name: postgres

@@ -11,6 +11,7 @@ COPY prisma ./prisma
 COPY src ./src
 RUN yarn prisma generate
 RUN yarn build
+RUN apk update && apk add --no-cache ffmpeg
 
 # ---- Production Stage ----
 FROM node:22-alpine AS production

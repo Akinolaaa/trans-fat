@@ -6,8 +6,10 @@
 	"scripts": {
 		"dev": "ts-node src/index.ts",
 		"start:dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
+		"start:dev-workers": "nodemon --watch src --ext ts --exec ts-node src/workers/index.ts",
 		"build": "tsc",
-		"start": "node dist/index.js"
+		"start": "node dist/index.js",
+		"start-workers": "node dist/workers/index.js"
 	},
 	"devDependencies": {
 		"@eslint/json": "^0.13.2",
