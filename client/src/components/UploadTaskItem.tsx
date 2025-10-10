@@ -139,8 +139,8 @@ const UploadTaskItem = ({ taskId, file, onTaskRemoval }: Props) => {
 					"progress should be",
 					Math.round((partNumber / totalParts) * 100)
 				);
-				setProgress(Math.round((partNumber / totalParts) * 100));
-				console.log("Progress is this", progress);
+				const newProgress = Math.round((partNumber / totalParts) * 100);
+				setProgress(newProgress);
 
 				// Simulate network latency
 				await sleep(2);
