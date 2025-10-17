@@ -110,7 +110,7 @@ DATABASE_URL=postgresql://postgres:postgres@postgres:5432/transfat?schema=public
 JWT_SECRET=jwtsecret
 
 AWS_REGION=us-east-1
-S3_ENDPOINT=http://minio:9000
+S3_ENDPOINT=http://localhost:9000
 S3_ACCESS_KEY=minioadmin
 S3_SECRET_KEY=minioadmin
 S3_BUCKET=transfat-uploads
